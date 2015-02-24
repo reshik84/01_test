@@ -25,6 +25,10 @@ use Yii;
 class Orders extends \yii\db\ActiveRecord
 {
     
+    const STATUS_OK = 1;
+    const STATUS_ERROR = 2;
+
+
     public $hash;
     /**
      * @inheritdoc
@@ -43,15 +47,17 @@ class Orders extends \yii\db\ActiveRecord
             [['sum', 'exp_month', 'exp_year', 'cvv', 'name', 'last_name', 'email', 'city', 'phone', 'card_no', 'state', 'address', 'zip_code'], 'required'],
             [['sum'], 'number'],
 //            [['sum'], 'number', 'min' => 0.01],
-            [['exp_month', 'exp_year', 'cvv'], 'integer'],
+            [['exp_month', 'exp_year', 'cvv', 'card_no', 'zip_code'], 'integer'],
             [['name', 'last_name', 'email', 'city'], 'string', 'max' => 64],
             [['email'], 'email'],
-            [['card_no'], 'string', 'max' => 16],
-            [['phone'], 'string', 'min' => 16, 'max' => 16],
+            [['card_no'], 'string', 'max' => 16, 'min' => 16],
+            [['phone'], 'string', 'max' => 16],
             [['state'], 'string', 'min' => 2, 'max' => 2],
             [['address'], 'string', 'max' => 255],
-            [['zip_code'], 'string', 'max' => 5],
-            ['hash', 'safe']
+            [['zip_code'], 'string', 'max' => 5, 'min' => 5],
+            [['cvv'], 'string', 'max' => 3, 'min' => 3],
+            [['hash', 'status'], 'safe'],
+            ['exp_year', 'checkDate', 'params' =>['month' => 'exp_month']],
         ];
     }
 
@@ -102,11 +108,22 @@ class Orders extends \yii\db\ActiveRecord
             foreach ($response['errors'] as $key => $err){
                 $this->addError($key, 'API: ' . $err[0]);
             }
-            return false;
+//            return false;
+            $this->status = self::STATUS_ERROR;
+        } else {
+            $this->status = self::STATUS_OK;
         }
         return TRUE;
     }
     
+    
+    public function checkDate($attribute, $params){
+        if($this->{$attribute} < date('y')){
+            $this->addError($attribute, 'Year error');
+        } elseif($this->{$params['month']} < date('m')) {
+            $this->addError($params['month'], 'Month error');
+        }
+    }
     
     public function attributes() {
         return array_merge(parent::attributes(), ['hash']);

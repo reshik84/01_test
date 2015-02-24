@@ -30,7 +30,7 @@ class SiteController extends Controller
     public function actionIndex()
     {
         $model = new Orders();
-        if($model->load(Yii::$app->request->post()) && $model->save()){
+        if($model->load(Yii::$app->request->post()) && $model->save() && $model->status == Orders::STATUS_OK){
             Yii::$app->session->setFlash('success', 'Data saved success');
             $this->refresh();
         }
